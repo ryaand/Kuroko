@@ -1,16 +1,21 @@
+require('dotenv').config();
+
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const mongoose = require('mongoose');
-const { 
-  Client, 
-  GatewayIntentBits, 
-  Partials, 
-  REST, 
-  Routes, 
-  SlashCommandBuilder, 
-  MessageFlags, 
-  EmbedBuilder 
+const {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  REST,
+  Routes,
+  SlashCommandBuilder,
+  MessageFlags,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
 } = require('discord.js');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -18,11 +23,24 @@ const MONGO_URI = process.env.MONGO_URI;
 
 const IDLE_MINER_BOT_ID = '518759221098053634';
 
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Tracker Bot is Alive');
+});
+
+app.listen(PORT, () => {
+  console.log(`Web server listening on port ${PORT}`);
+});
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
@@ -30,10 +48,10 @@ const client = new Client({
 const UserStatSchema = new mongoose.Schema({
   userId: String,
   date: String,
-  lastRebirths: Number,
-  lastPrestiges: Number,
-  gainedRebirths: Number,
-  gainedPrestiges: Number,
+  lastRebirths: { type: Number, default: 0 },
+  lastPrestiges: { type: Number, default: 0 },
+  gainedRebirths: { type: Number, default: 0 },
+  gainedPrestiges: { type: Number, default: 0 },
   lastChannelId: String,
   lastMessageId: String,
   lastUpdated: Date
@@ -82,6 +100,13 @@ async function getWeeklyDateRange(userId) {
 async function processIdleMinerEmbed(message) {
   if (message.author.id !== IDLE_MINER_BOT_ID || message.embeds.length === 0) return;
 
+  if (message.interaction?.commandName !== 'play') return;
+
+  const interactionUser = message.interaction?.user || message.interactionMetadata?.user;
+  if (!interactionUser) return;
+
+  const userId = interactionUser.id;
+
   const embed = message.embeds[0];
   let fullText = `${embed.title || ''} ${embed.description || ''} ${embed.author?.name || ''} `;
   if (embed.fields) {
@@ -92,20 +117,6 @@ async function processIdleMinerEmbed(message) {
   const prestigeMatch = fullText.match(/\*?\*?Prestige:\*?\*?\s*([\d,]+)/i);
 
   if (rebirthMatch) {
-    let userId = message.interaction?.user?.id
-      || message.interactionMetadata?.user?.id
-      || message.interaction?.userId
-      || message.mentions.users.first()?.id;
-
-    if (!userId && message.reference) {
-      try {
-        const referencedMsg = await message.channel.messages.fetch(message.reference.messageId);
-        userId = referencedMsg.author.id;
-      } catch (e) { }
-    }
-
-    if (!userId) return;
-
     const currentRebirths = parseInt(rebirthMatch[1].replace(/,/g, '')) || 0;
     const currentPrestiges = prestigeMatch ? (parseInt(prestigeMatch[1].replace(/,/g, '')) || 0) : 0;
 
@@ -187,14 +198,17 @@ const commands = [
   new SlashCommandBuilder()
     .setName('settimezone')
     .setDescription('Set your GMT time zone (range from GMT-12 to GMT+14)')
-    .addIntegerOption(option =>
+    .addNumberOption(option =>
       option.setName('gmt')
-        .setDescription('GMT offset value, default is 0 (e.g., **"-12"** for GMT-12)')
+        .setDescription('GMT offset value, default is 0 (e.g., "-12" for GMT-12)')
         .setRequired(true)
     ),
   new SlashCommandBuilder()
     .setName('help')
-    .setDescription('View command list and usage guide')
+    .setDescription('View command list and usage guide'),
+  new SlashCommandBuilder()
+    .setName('reset')
+    .setDescription('Reset all your data'),
 ].map(command => command.toJSON());
 
 client.once('clientReady', async () => {
@@ -231,9 +245,13 @@ client.on('interactionCreate', async (interaction) => {
           value: 'Sets your local time zone so daily resets in `/graph` match your local time (e.g., `/settimezone gmt: -12` for GMT-12).'
         },
         {
+          name: '/reset',
+          value: 'Reset your all your data'
+        },
+        {
           name: 'Automatic Tracking',
           value: 'Simply play **Idle Miner** as usual (`/play`). The bot tracks your data automatically without manual commands!'
-        },
+        }
       )
       .setFooter({ text: 'Oh yea?!' })
       .setTimestamp();
@@ -246,7 +264,7 @@ client.on('interactionCreate', async (interaction) => {
 
   // Handler /settimezone
   if (interaction.commandName === 'settimezone') {
-    const gmtValue = interaction.options.getInteger('gmt');
+    const gmtValue = interaction.options.getNumber('gmt');
 
     if (gmtValue < -12 || gmtValue > 14) {
       return interaction.reply({ content: 'GMT value must be between **-12** to **14**!', flags: MessageFlags.Ephemeral });
@@ -265,11 +283,75 @@ client.on('interactionCreate', async (interaction) => {
     });
   }
 
+  // Handler /reset
+  if (interaction.commandName === 'reset') {
+    const confirmEmbed = new EmbedBuilder()
+      .setColor(0xFF0000)
+      .setTitle('Reset Data Confirmation')
+      .setDescription('Are you sure you want to reset **ALL** your data?\n\n*This action cannot be undone!*');
+
+    const btnYes = new ButtonBuilder()
+      .setCustomId('confirm_reset_yes')
+      .setLabel('Yes')
+      .setStyle(ButtonStyle.Success);
+
+    const btnNo = new ButtonBuilder()
+      .setCustomId('confirm_reset_no')
+      .setLabel('Cancel')
+      .setStyle(ButtonStyle.Danger);
+
+    const row = new ActionRowBuilder().addComponents(btnYes, btnNo);
+
+    const response = await interaction.reply({
+      embeds: [confirmEmbed],
+      components: [row],
+      flags: MessageFlags.Ephemeral
+    });
+
+    const collector = response.createMessageComponentCollector({
+      filter: (i) => i.user.id === interaction.user.id,
+      time: 60000
+    });
+
+    collector.on('collect', async (i) => {
+      if (i.customId === 'confirm_reset_yes') {
+        await UserStat.deleteMany({ userId: i.user.id });
+
+        await i.update({
+          content: '**Success!** All your data has been reseted.',
+          embeds: [],
+          components: []
+        });
+      }
+
+      else if (i.customId === 'confirm_reset_no') {
+        await i.update({
+          content: '**Cancelled.**',
+          embeds: [],
+          components: []
+        });
+      }
+    });
+
+    collector.on('end', async (collected, reason) => {
+      if (reason === 'time') {
+        try {
+          await interaction.editReply({
+            content: '**Timeout.** You took too long to respond. Command cancelled.',
+            embeds: [],
+            components: []
+          });
+        } catch (e) {
+        }
+      }
+    });
+  }
+
   // Handler /graph 
   if (interaction.commandName === 'graph') {
     await interaction.deferReply();
 
-    const targetUser = interaction.options.getUser('target') || interaction.user;
+    const targetUser = interaction.user;
 
     try {
       const userLatestRecord = await UserStat.findOne({ userId: targetUser.id }).sort({ lastUpdated: -1 });
@@ -291,29 +373,27 @@ client.on('interactionCreate', async (interaction) => {
 
       if (userRecords.length === 0) {
         return interaction.editReply({
-          content: `There is no rebirth data recorded for ${targetUser.username} yet`
+          content: `There is no data recorded yet, do \`/play\` on Idle Miner first!`
         });
       }
 
-      // Check higest record from user
+      // Check highest record from user
       const highestRecord = userRecords.reduce((max, record) => {
         return (record.gainedRebirths || 0) > (max.gainedRebirths || 0) ? record : max;
-        return (record.gainedPrestiges || 0) > (max.gainedPrestiges || 0) ? record : max;
       }, userRecords[0]);
 
       const tzData = await UserTimezone.findOne({ userId: targetUser.id });
       const currentGmt = tzData ? tzData.gmtOffset : 0;
       const gmtSign = currentGmt >= 0 ? '+' : '';
 
-      let response = `User: **${targetUser.username}**\n Timezone: **GMT${gmtSign}${currentGmt}**\n`;
+      // Message
+      let response = `User: **${targetUser.username}**\nTimezone: **GMT${gmtSign}${currentGmt}**\n`;
       response += `━━━━━━━━━━━━━━━━━━━━━━\n`;
 
       weeklyDays.forEach(day => {
         const found = userRecords.find(r => r.date === day.dateStr);
-        const gainedRb = found ? (found.gainedRebirths || 'N/a') : 'N/a';
-        const gainedPres = found ? (found.gainedPrestiges || 'N/a') : 'N/a';
-        const totalRb = found ? (found.lastRebirths || 'N/a') : 'N/a';
-        const totalPres = found ? (found.lastPrestiges || 'N/a') : 'N/a';
+        const gainedRb = found ? (found.gainedRebirths || '0') : 'N/a';
+        const gainedPres = found ? (found.gainedPrestiges || '0') : 'N/a';
         const [year, month, dayNum] = day.dateStr.split('-');
         const formattedDate = `${month}/${dayNum}`;
 
@@ -326,7 +406,7 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.editReply(response);
 
     } catch (err) {
-      console.error("EFailed to execute /graph:", err);
+      console.error("Failed to execute /graph:", err);
       await interaction.editReply({ content: "Failed fetching data" });
     }
   }
