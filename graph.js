@@ -15,7 +15,8 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  ActivityType
 } = require('discord.js');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -212,6 +213,7 @@ const commands = [
 ].map(command => command.toJSON());
 
 client.once('clientReady', async () => {
+  client.user.setActivity('/help', { type: ActivityType.Watching });
   const rest = new REST({ version: '10' }).setToken(BOT_TOKEN);
 
   try {
@@ -264,7 +266,8 @@ client.on('interactionCreate', async (interaction) => {
 
   // Handler /settimezone
   if (interaction.commandName === 'settimezone') {
-    const gmtValue = interaction.options.getNumber('gmt');
+    let gmtValue = interaction.options.getNumber('gmt');
+    gmtValue = Math.round(gmtValue * 4) / 4;
 
     if (gmtValue < -12 || gmtValue > 14) {
       return interaction.reply({ content: 'GMT value must be between **-12** to **14**!', flags: MessageFlags.Ephemeral });
