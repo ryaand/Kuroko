@@ -73,9 +73,9 @@ const UserTimezone = mongoose.model('UserTimezone', UserTimezoneSchema);
 // Canvas
 const width = 800;
 const height = 400;
-const chartJSNodeCanvas = new ChartJSNodeCanvas({ 
-  width, 
-  height, 
+const chartJSNodeCanvas = new ChartJSNodeCanvas({
+  width,
+  height,
   backgroundColour: '#2b2d31'
 });
 
@@ -431,14 +431,17 @@ client.on('interactionCreate', async (interaction) => {
       const rebirthData = [];
       const prestigeData = [];
 
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(userNow);
-        d.setDate(d.getDate() - i);
+      const daysName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-        const dateStr = d.toISOString().split('T')[0];
-        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-        const monthNum = String(d.getMonth() + 1).padStart(2, '0');
-        const dayNum = String(d.getDate()).padStart(2, '0');
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(userNow.getTime() - i * 24 * 60 * 60 * 1000);
+
+        const year = d.getUTCFullYear();
+        const monthNum = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const dayNum = String(d.getUTCDate()).padStart(2, '0');
+
+        const dateStr = `${year}-${monthNum}-${dayNum}`;
+        const dayName = daysName[d.getUTCDay()];
 
         labels.push(`${dayName} ${monthNum}/${dayNum}`);
 
