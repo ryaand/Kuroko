@@ -16,8 +16,11 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ActivityType
+  ActivityType,
+  AttachmentBuilder
 } = require('discord.js');
+
+const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const MONGO_URI = process.env.MONGO_URI;
@@ -46,6 +49,7 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
+// Database Schemas
 const UserStatSchema = new mongoose.Schema({
   userId: String,
   date: String,
@@ -66,6 +70,78 @@ const UserTimezoneSchema = new mongoose.Schema({
 const UserStat = mongoose.model('UserStat', UserStatSchema);
 const UserTimezone = mongoose.model('UserTimezone', UserTimezoneSchema);
 
+// Canvas
+const width = 800;
+const height = 400;
+const chartJSNodeCanvas = new ChartJSNodeCanvas({ 
+  width, 
+  height, 
+  backgroundColour: '#2b2d31'
+});
+
+async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
+  const configuration = {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Rebirths',
+          data: rebirthData,
+          backgroundColor: '#2ECC71',
+          borderRadius: 0,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Prestiges',
+          data: prestigeData,
+          backgroundColor: '#F1C40F',
+          borderRadius: 0,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#FFFFFF',
+            font: { size: 14, weight: 'bold' }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#B5BAC1', font: { size: 12 } },
+          grid: { color: '#3f4147' }
+        },
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          beginAtZero: true,
+          ticks: { color: '#2ECC71', precision: 0 },
+          grid: { color: '#3f4147' },
+          title: { display: true, text: 'Rebirths', color: '#2ECC71', font: { weight: 'bold', size: 13 } }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          beginAtZero: true,
+          suggestedMax: 10,
+          ticks: { color: '#F1C40F', precision: 0 },
+          grid: { drawOnChartArea: false },
+          title: { display: true, text: 'Prestiges', color: '#F1C40F', font: { weight: 'bold', size: 13 } }
+        }
+      }
+    }
+  };
+
+  return await chartJSNodeCanvas.renderToBuffer(configuration);
+}
+
 async function getUserLocalDateTime(userId) {
   let userTz = await UserTimezone.findOne({ userId: userId });
   const offsetHours = userTz ? userTz.gmtOffset : 0;
@@ -73,41 +149,14 @@ async function getUserLocalDateTime(userId) {
   return new Date(now.getTime() + offsetHours * 3600 * 1000);
 }
 
-async function getWeeklyDateRange(userId) {
-  const localNow = await getUserLocalDateTime(userId);
-  const dayOfWeek = localNow.getUTCDay();
-  const sundayDate = new Date(localNow);
-  sundayDate.setUTCDate(localNow.getUTCDate() - dayOfWeek);
-
-  const daysList = [];
-  const daysName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(sundayDate);
-    d.setUTCDate(sundayDate.getUTCDate() + i);
-
-    if (d > localNow && d.toISOString().split('T')[0] !== localNow.toISOString().split('T')[0]) {
-      break;
-    }
-
-    const dateStr = d.toISOString().split('T')[0];
-    const dayLabel = daysName[d.getUTCDay()];
-    daysList.push({ dateStr, dayLabel });
-  }
-
-  return daysList;
-}
-
 async function processIdleMinerEmbed(message) {
   if (message.author.id !== IDLE_MINER_BOT_ID || message.embeds.length === 0) return;
-
   if (message.interaction?.commandName !== 'play') return;
 
   const interactionUser = message.interaction?.user || message.interactionMetadata?.user;
   if (!interactionUser) return;
 
   const userId = interactionUser.id;
-
   const embed = message.embeds[0];
   let fullText = `${embed.title || ''} ${embed.description || ''} ${embed.author?.name || ''} `;
   if (embed.fields) {
@@ -195,7 +244,7 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 const commands = [
   new SlashCommandBuilder()
     .setName('graph')
-    .setDescription('Check rebirth & prestige weekly stats'),
+    .setDescription('Check rebirth & prestige last stats graph'),
   new SlashCommandBuilder()
     .setName('settimezone')
     .setDescription('Set your GMT time zone (range from GMT-12 to GMT+14)')
@@ -240,15 +289,15 @@ client.on('interactionCreate', async (interaction) => {
       .addFields(
         {
           name: '/graph',
-          value: 'Displays your daily stats for the current week (Sun–Sat) alongside your highest single-day Rebirth record.'
+          value: 'Displays a visual graph of your daily stats for the **Last 7 Days** alongside your highest single-day record.'
         },
         {
           name: '/settimezone [gmt]',
-          value: 'Sets your local time zone so daily resets in `/graph` match your local time (e.g., `/settimezone gmt: -12` for GMT-12).'
+          value: 'Sets your local time zone so daily resets match your local time (e.g., `/settimezone gmt: 7` for GMT+7).'
         },
         {
           name: '/reset',
-          value: 'Reset your all your data'
+          value: 'Reset all your data permanently.'
         },
         {
           name: 'Automatic Tracking',
@@ -326,7 +375,6 @@ client.on('interactionCreate', async (interaction) => {
           components: []
         });
       }
-
       else if (i.customId === 'confirm_reset_no') {
         await i.update({
           content: '**Cancelled.**',
@@ -350,7 +398,6 @@ client.on('interactionCreate', async (interaction) => {
     });
   }
 
-  // Handler /graph 
   if (interaction.commandName === 'graph') {
     await interaction.deferReply();
 
@@ -371,7 +418,6 @@ client.on('interactionCreate', async (interaction) => {
         } catch (e) { }
       }
 
-      const weeklyDays = await getWeeklyDateRange(targetUser.id);
       const userRecords = await UserStat.find({ userId: targetUser.id });
 
       if (userRecords.length === 0) {
@@ -380,7 +426,32 @@ client.on('interactionCreate', async (interaction) => {
         });
       }
 
-      // Check highest record from user
+      const userNow = await getUserLocalDateTime(targetUser.id);
+      const labels = [];
+      const rebirthData = [];
+      const prestigeData = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(userNow);
+        d.setDate(d.getDate() - i);
+
+        const dateStr = d.toISOString().split('T')[0];
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+        const dayNum = String(d.getDate()).padStart(2, '0');
+
+        labels.push(`${dayName} ${monthNum}/${dayNum}`);
+
+        const record = userRecords.find(r => r.date === dateStr);
+        if (record) {
+          rebirthData.push(record.gainedRebirths || 0);
+          prestigeData.push(record.gainedPrestiges || 0);
+        } else {
+          rebirthData.push(0);
+          prestigeData.push(0);
+        }
+      }
+
       const highestRecord = userRecords.reduce((max, record) => {
         return (record.gainedRebirths || 0) > (max.gainedRebirths || 0) ? record : max;
       }, userRecords[0]);
@@ -389,28 +460,31 @@ client.on('interactionCreate', async (interaction) => {
       const currentGmt = tzData ? tzData.gmtOffset : 0;
       const gmtSign = currentGmt >= 0 ? '+' : '';
 
-      // Message
-      let response = `User: **${targetUser.username}**\nTimezone: **GMT${gmtSign}${currentGmt}**\n`;
-      response += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+      const imageBuffer = await generateLast7DaysGraph(labels, rebirthData, prestigeData);
+      const attachment = new AttachmentBuilder(imageBuffer, { name: 'graph.png' });
 
-      weeklyDays.forEach(day => {
-        const found = userRecords.find(r => r.date === day.dateStr);
-        const gainedRb = found ? (found.gainedRebirths || '0') : 'N/a';
-        const gainedPres = found ? (found.gainedPrestiges || '0') : 'N/a';
-        const [year, month, dayNum] = day.dateStr.split('-');
-        const formattedDate = `${month}/${dayNum}`;
+      const embed = new EmbedBuilder()
+        .setTitle(`${targetUser.username}`)
+        .setColor(0x5865F2)
+        .setDescription(`Timezone: **GMT${gmtSign}${currentGmt}**`)
+        .addFields(
+          {
+            name: 'Highest Daily Record',
+            value: `**${highestRecord.gainedRebirths || 0}** Rebirths | **${highestRecord.gainedPrestiges || 0}** Prestiges *(${highestRecord.date})*`
+          }
+        )
+        .setImage('attachment://graph.png')
+        .setFooter({ text: 'Rebirth Weekly Counter' })
+        .setTimestamp();
 
-        response += `• **${day.dayLabel}** (${formattedDate}): **${gainedRb}** Rebirths | **${gainedPres}** Prestiges\n`;
+      await interaction.editReply({
+        embeds: [embed],
+        files: [attachment]
       });
 
-      response += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-      response += `**Highest Daily Record:** **${highestRecord.gainedRebirths || 0}** Rebirths | **${highestRecord.gainedPrestiges || 0}** Prestiges *(${highestRecord.date})*\n`;
-
-      await interaction.editReply(response);
-
     } catch (err) {
-      console.error("Failed to execute /graph:", err);
-      await interaction.editReply({ content: "Failed fetching data" });
+      console.error("Failed to execute:", err);
+      await interaction.editReply({ content: "Failed fetching graph data" });
     }
   }
 });
