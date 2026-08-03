@@ -120,13 +120,19 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         y: {
           stacked: true,
           beginAtZero: true,
-          ticks: { color: '#ffffff', precision: 0 },
+          stepSize: 10,
+          callback: function (value) {
+            if ((value - 5) % 10 === 0) {
+              return value;
+            }
+          },
+          ticks: { color: '#ffffff', precision: 0, weight: 'bold' },
           grid: { color: '#3f4147' },
-          title: { 
-            display: true, 
-            text: 'Total Gain (Rebirths & Prestiges)', 
-            color: '#FFFFFF', 
-            font: { weight: 'bold', size: 13 } 
+          title: {
+            display: true,
+            text: 'Total Gain (Rebirths & Prestiges)',
+            color: '#FFFFFF',
+            font: { weight: 'bold', size: 13 }
           }
         }
       }
