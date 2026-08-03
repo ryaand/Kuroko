@@ -88,15 +88,15 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         {
           label: 'Prestiges',
           data: prestigeData,
-          backgroundColor: '#F1C40F', // Kuning/Emas buat Prestige (di dasar)
+          backgroundColor: '#F1C40F',
           borderRadius: 0,
           stack: 'combined'
         },
         {
           label: 'Rebirths',
           data: rebirthData,
-          backgroundColor: '#2ECC71', // Hijau buat Rebirth (ditumpuk di atas)
-          borderRadius: 4,
+          backgroundColor: '#2ECC71',
+          borderRadius: 0,
           stack: 'combined'
         }
       ]
@@ -118,7 +118,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           grid: { color: '#3f4147' }
         },
         y: {
-          stacked: true, // Sumbu Y CUMA 1 di kiri
+          stacked: true,
           beginAtZero: true,
           ticks: { color: '#2ECC71', precision: 0 },
           grid: { color: '#3f4147' },
@@ -438,7 +438,7 @@ client.on('interactionCreate', async (interaction) => {
         const dateStr = `${year}-${monthNum}-${dayNum}`;
         const dayName = daysName[d.getUTCDay()];
 
-        labels.push(`${dayName} ${monthNum}/${dayNum}`);
+        labels.push(`${monthNum}/${dayNum}`);
 
         const record = userRecords.find(r => r.date === dateStr);
         if (record) {
