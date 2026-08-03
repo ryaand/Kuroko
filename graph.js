@@ -81,9 +81,13 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
 });
 
 async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
-  const totalData = rebirthData.map((val, idx) => val + (prestigeData[idx] || 0));
+  const adjustedRebirthData = rebirthData.map((rb, idx) => {
+    const pres = prestigeData[idx] || 0;
+    return rb >= pres ? rb - pres : rb;
+  });
 
-  const maxVal = Math.max(...totalData, 0);
+  const highestValue = Math.max(...rebirthData, 0);
+  const maxVal = highestValue > 0 ? highestValue : 10;
 
   const configuration = {
     type: 'bar',
@@ -108,7 +112,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         },
         {
           label: 'HiddenTotal',
-          data: totalData,
+          data: rebirthData,
           backgroundColor: 'rgba(0,0,0,0)',
           borderColor: 'rgba(0,0,0,0)',
           stack: 'combined',
@@ -136,7 +140,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           position: 'left',
           stacked: true,
           beginAtZero: true,
-          max: maxVal > 0 ? maxVal : undefined,
+          max: maxVal,
           ticks: {
             color: '#ffffff',
             precision: 0,
@@ -149,7 +153,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         y1: {
           position: 'right',
           beginAtZero: true,
-          max: maxVal > 0 ? maxVal : undefined,
+          max: maxVal,
           ticks: {
             color: '#ffffff',
             precision: 0,
