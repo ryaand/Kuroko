@@ -120,7 +120,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         y: {
           stacked: true,
           beginAtZero: true,
-          ticks: { color: '#2ECC71', precision: 0 },
+          ticks: { color: '#ffffff', precision: 0 },
           grid: { color: '#3f4147' },
           title: { 
             display: true, 
