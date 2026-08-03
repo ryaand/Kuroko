@@ -81,24 +81,35 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
 });
 
 async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
+  const totalData = rebirthData.map((val, idx) => val + (prestigeData[idx] || 0));
+
   const configuration = {
     type: 'bar',
     data: {
       labels: labels,
       datasets: [
         {
-          label: 'Prestiges',
+          label: 'Prestige',
           data: prestigeData,
           backgroundColor: '#F1C40F',
           borderRadius: 0,
-          stack: 'combined'
+          stack: 'combined',
+          yAxisID: 'y'
         },
         {
-          label: 'Rebirths',
+          label: 'Rebirth',
           data: rebirthData,
           backgroundColor: '#2ECC71',
           borderRadius: 0,
-          stack: 'combined'
+          stack: 'combined',
+          yAxisID: 'y'
+        },
+        {
+          label: 'HiddenTotal',
+          data: totalData,
+          backgroundColor: 'rgba(0,0,0,0)',
+          borderColor: 'rgba(0,0,0,0)',
+          yAxisID: 'y1'
         }
       ]
     },
@@ -108,7 +119,8 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         legend: {
           labels: {
             color: '#FFFFFF',
-            font: { size: 14, weight: 'bold' }
+            font: { size: 14, weight: 'bold' },
+            filter: (item) => item.text !== 'HiddenTotal'
           }
         }
       },
@@ -116,9 +128,9 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         x: {
           stacked: true,
           ticks: { color: '#B5BAC1', font: { size: 12 } },
-          grid: { color: '#3f4147' }
         },
         y: {
+          position: 'left',
           stacked: true,
           beginAtZero: true,
           ticks: {
@@ -128,6 +140,17 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             font: { weight: 'bold', size: 12 }
           },
           grid: { color: '#3f4147' },
+        },
+        y1: {
+          position: 'right',
+          beginAtZero: true,
+          ticks: {
+            color: '#ffffff',
+            precision: 0,
+            stepSize: 5,
+            font: { weight: 'bold', size: 12 }
+          },
+          grid: { drawOnChartArea: false }
         }
       }
     }
