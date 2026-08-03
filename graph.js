@@ -86,18 +86,18 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
       labels: labels,
       datasets: [
         {
-          label: 'Rebirths',
-          data: rebirthData,
-          backgroundColor: '#2ECC71',
-          borderRadius: 0,
-          yAxisID: 'y'
-        },
-        {
           label: 'Prestiges',
           data: prestigeData,
-          backgroundColor: '#F1C40F',
+          backgroundColor: '#F1C40F', // Kuning/Emas buat Prestige (di dasar)
           borderRadius: 0,
-          yAxisID: 'y1'
+          stack: 'combined'
+        },
+        {
+          label: 'Rebirths',
+          data: rebirthData,
+          backgroundColor: '#2ECC71', // Hijau buat Rebirth (ditumpuk di atas)
+          borderRadius: 4,
+          stack: 'combined'
         }
       ]
     },
@@ -113,27 +113,21 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
       },
       scales: {
         x: {
+          stacked: true,
           ticks: { color: '#B5BAC1', font: { size: 12 } },
           grid: { color: '#3f4147' }
         },
         y: {
-          type: 'linear',
-          display: true,
-          position: 'left',
+          stacked: true, // Sumbu Y CUMA 1 di kiri
           beginAtZero: true,
           ticks: { color: '#2ECC71', precision: 0 },
           grid: { color: '#3f4147' },
-          title: { display: true, text: 'Rebirths', color: '#2ECC71', font: { weight: 'bold', size: 13 } }
-        },
-        y1: {
-          type: 'linear',
-          display: true,
-          position: 'right',
-          beginAtZero: true,
-          suggestedMax: 10,
-          ticks: { color: '#F1C40F', precision: 0 },
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: 'Prestiges', color: '#F1C40F', font: { weight: 'bold', size: 13 } }
+          title: { 
+            display: true, 
+            text: 'Total Gain (Rebirths & Prestiges)', 
+            color: '#FFFFFF', 
+            font: { weight: 'bold', size: 13 } 
+          }
         }
       }
     }
@@ -398,6 +392,7 @@ client.on('interactionCreate', async (interaction) => {
     });
   }
 
+  // Handler /graph
   if (interaction.commandName === 'graph') {
     await interaction.deferReply();
 
@@ -433,7 +428,7 @@ client.on('interactionCreate', async (interaction) => {
 
       const daysName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-      for (let i = 6; i >= 0; i--) {
+      for (let i = 13; i >= 0; i--) {
         const d = new Date(userNow.getTime() - i * 24 * 60 * 60 * 1000);
 
         const year = d.getUTCFullYear();
