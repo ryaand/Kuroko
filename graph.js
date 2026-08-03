@@ -109,6 +109,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           data: totalData,
           backgroundColor: 'rgba(0,0,0,0)',
           borderColor: 'rgba(0,0,0,0)',
+          stack: 'combined',
           yAxisID: 'y1'
         }
       ]
