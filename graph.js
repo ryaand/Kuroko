@@ -128,12 +128,6 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             font: { weight: 'bold', size: 12 }
           },
           grid: { color: '#3f4147' },
-          title: {
-            display: true,
-            text: 'Total Gain (Rebirths & Prestiges)',
-            color: '#FFFFFF',
-            font: { weight: 'bold', size: 13 }
-          }
         }
       }
     }
