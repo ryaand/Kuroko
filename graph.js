@@ -140,7 +140,8 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             stepSize: 5,
             autoSkip: false,
             font: { weight: 'bold', size: 12 }
-          }
+          },
+          grid: { color: '#c6c9d1' },
         },
         y1: {
           position: 'right',
