@@ -138,9 +138,9 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             color: '#ffffff',
             precision: 0,
             stepSize: 5,
+            autoSkip: false,
             font: { weight: 'bold', size: 12 }
-          },
-          grid: { color: '#3f4147' },
+          }
         },
         y1: {
           position: 'right',
@@ -149,6 +149,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             color: '#ffffff',
             precision: 0,
             stepSize: 5,
+            autoSkip: false,
             font: { weight: 'bold', size: 12 }
           },
           grid: { drawOnChartArea: false }
