@@ -73,7 +73,7 @@ const UserTimezone = mongoose.model('UserTimezone', UserTimezoneSchema);
 
 // Canvas
 const width = 800;
-const height = 400;
+const height = 600;
 const chartJSNodeCanvas = new ChartJSNodeCanvas({
   width,
   height,
