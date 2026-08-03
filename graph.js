@@ -83,6 +83,8 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
 async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
   const totalData = rebirthData.map((val, idx) => val + (prestigeData[idx] || 0));
 
+  const maxVal = Math.max(...totalData, 0);
+
   const configuration = {
     type: 'bar',
     data: {
@@ -134,6 +136,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           position: 'left',
           stacked: true,
           beginAtZero: true,
+          max: maxVal > 0 ? maxVal : undefined,
           ticks: {
             color: '#ffffff',
             precision: 0,
@@ -146,6 +149,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
         y1: {
           position: 'right',
           beginAtZero: true,
+          max: maxVal > 0 ? maxVal : undefined,
           ticks: {
             color: '#ffffff',
             precision: 0,
