@@ -165,7 +165,8 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             autoSkip: false,
             font: { weight: 'bold', size: 12 },
             callback: function(value) {
-              if (value === 0 || value === startVal || (value > startVal && (value - startVal) % step === 0)) {
+              if (value === 0) return null;
+              if (value === startVal || (value > startVal && (value - startVal) % step === 0)) {
                 return value;
               }
               return null;
@@ -174,7 +175,8 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           grid: {
             color: (ctx) => {
               const val = ctx.tick.value;
-              if (val === 0 || val === startVal || (val > startVal && (val - startVal) % step === 0)) {
+              if (val === 0) return 'transparent';
+              if (val === startVal || (val > startVal && (val - startVal) % step === 0)) {
                 return '#c6c9d1';
               }
               return 'transparent';
@@ -192,7 +194,8 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             autoSkip: false,
             font: { weight: 'bold', size: 12 },
             callback: function(value) {
-              if (value === 0 || value === startVal || (value > startVal && (value - startVal) % step === 0)) {
+              if (value === 0) return null;
+              if (value === startVal || (value > startVal && (value - startVal) % step === 0)) {
                 return value;
               }
               return null;
