@@ -88,20 +88,22 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
 
   const maxRebirth = Math.max(...rebirthData, 0);
   const maxPrestige = Math.max(...prestigeData, 0);
-  const maxVal = maxRebirth > 0 ? maxRebirth : 10;
+  const rawMax = maxRebirth > 0 ? maxRebirth : 10;
 
   let startVal = 5;
   let step = 10;
 
-  if (maxPrestige > 20 || maxVal > 500) {
+  if (maxPrestige > 10 || rawMax > 250) {
     startVal = 10;
     step = 25;
-  } else if (maxPrestige > 10 || maxVal > 250) {
-    startVal = 10;
-    step = 15;
   } else {
     startVal = 5;
     step = 10;
+  }
+
+  let customMax = startVal;
+  while (customMax < rawMax) {
+    customMax += step;
   }
 
   const configuration = {
@@ -155,33 +157,45 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           position: 'left',
           stacked: true,
           beginAtZero: true,
-          max: maxVal,
+          max: customMax,
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: step,
+            stepSize: 1,
             autoSkip: false,
             font: { weight: 'bold', size: 12 },
             callback: function(value) {
-              if (value === 0) return 0;
-              return value - (step - startVal);
+              if (value === 0 || value === startVal || (value > startVal && (value - startVal) % step === 0)) {
+                return value;
+              }
+              return null;
             }
           },
-          grid: { color: '#c6c9d1' },
+          grid: {
+            color: (ctx) => {
+              const val = ctx.tick.value;
+              if (val === 0 || val === startVal || (val > startVal && (val - startVal) % step === 0)) {
+                return '#c6c9d1';
+              }
+              return 'transparent';
+            }
+          }
         },
         y1: {
           position: 'right',
           beginAtZero: true,
-          max: maxVal,
+          max: customMax,
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: step,
+            stepSize: 1,
             autoSkip: false,
             font: { weight: 'bold', size: 12 },
             callback: function(value) {
-              if (value === 0) return 0;
-              return value - (step - startVal);
+              if (value === 0 || value === startVal || (value > startVal && (value - startVal) % step === 0)) {
+                return value;
+              }
+              return null;
             }
           },
           grid: { drawOnChartArea: false }
