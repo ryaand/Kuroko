@@ -89,6 +89,9 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
   const highestValue = Math.max(...rebirthData, 0);
   const maxVal = highestValue > 0 ? highestValue : 10;
 
+  const isSmallScale = maxVal <= 150;
+  const dynamicStep = isSmallScale ? 5 : undefined;
+
   const configuration = {
     type: 'bar',
     data: {
@@ -144,8 +147,8 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: 5,
-            autoSkip: false,
+            stepSize: dynamicStep,
+            autoSkip: !isSmallScale,
             font: { weight: 'bold', size: 12 }
           },
           grid: { color: '#c6c9d1' },
@@ -157,8 +160,8 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: 5,
-            autoSkip: false,
+            stepSize: dynamicStep,
+            autoSkip: !isSmallScale,
             font: { weight: 'bold', size: 12 }
           },
           grid: { drawOnChartArea: false }
