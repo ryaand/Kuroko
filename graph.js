@@ -86,11 +86,23 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
     return rb >= pres ? rb - pres : rb;
   });
 
-  const highestValue = Math.max(...rebirthData, 0);
-  const maxVal = highestValue > 0 ? highestValue : 10;
+  const maxRebirth = Math.max(...rebirthData, 0);
+  const maxPrestige = Math.max(...prestigeData, 0);
+  const maxVal = maxRebirth > 0 ? maxRebirth : 10;
 
-  const isSmallScale = maxVal <= 150;
-  const dynamicStep = isSmallScale ? 5 : undefined;
+  let startVal = 5;
+  let step = 10;
+
+  if (maxPrestige > 20 || maxVal > 500) {
+    startVal = 10;
+    step = 25;
+  } else if (maxPrestige > 10 || maxVal > 250) {
+    startVal = 10;
+    step = 15;
+  } else {
+    startVal = 5;
+    step = 10;
+  }
 
   const configuration = {
     type: 'bar',
@@ -147,9 +159,14 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: dynamicStep,
-            autoSkip: !isSmallScale,
-            font: { weight: 'bold', size: 12 }
+            stepSize: step,
+            autoSkip: false,
+            font: { weight: 'bold', size: 12 },
+            callback: function(value) {
+              if (value === 0 || (value - startVal) % step === 0) {
+                return value;
+              }
+            }
           },
           grid: { color: '#c6c9d1' },
         },
@@ -160,9 +177,14 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: dynamicStep,
-            autoSkip: !isSmallScale,
-            font: { weight: 'bold', size: 12 }
+            stepSize: step,
+            autoSkip: false,
+            font: { weight: 'bold', size: 12 },
+            callback: function(value) {
+              if (value === 0 || (value - startVal) % step === 0) {
+                return value;
+              }
+            }
           },
           grid: { drawOnChartArea: false }
         }
