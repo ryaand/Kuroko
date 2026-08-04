@@ -159,6 +159,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
+            stepSize: 1,
             stepSize: step,
             autoSkip: false,
             font: { weight: 'bold', size: 12 },
@@ -176,6 +177,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           max: maxVal,
           ticks: {
             color: '#ffffff',
+            stepSize: 1,
             precision: 0,
             stepSize: step,
             autoSkip: false,
