@@ -357,7 +357,7 @@ client.on('interactionCreate', async (interaction) => {
       .addFields(
         {
           name: '/graph',
-          value: 'Displays a visual graph of your daily stats for the **Last 7 Days** alongside your highest single-day record.'
+          value: 'Displays a visual graph of your daily stats for the **Last 14 Days** alongside your highest single-day record.'
         },
         {
           name: '/settimezone [gmt]',
