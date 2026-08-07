@@ -538,13 +538,7 @@ client.on('interactionCreate', async (interaction) => {
       const embed = new EmbedBuilder()
         .setTitle(`${targetUser.username}`)
         .setColor(0x5865F2)
-        .setDescription(`Timezone: **GMT${gmtSign}${currentGmt}**`)
-        .addFields(
-          {
-            name: 'Highest Daily Record',
-            value: `**${highestRecord.gainedRebirths || 0}** Rebirths | **${highestRecord.gainedPrestiges || 0}** Prestiges *(${highestRecord.date})*`
-          }
-        )
+        .setDescription(`Timezone: **GMT${gmtSign}${currentGmt}**\n\n**Highest daily record:** **${highestRecord.gainedRebirths || 0}** Rebirths | **${highestRecord.gainedPrestiges || 0}** Prestiges *(${highestRecord.date})*`)
         .setImage('attachment://graph.png')
         .setFooter({ text: 'Rebirth Weekly Counter' })
         .setTimestamp();
