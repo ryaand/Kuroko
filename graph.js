@@ -303,8 +303,13 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 
 const commands = [
   new SlashCommandBuilder()
-    .setName('graph')
-    .setDescription('Check rebirth & prestige last stats graph'),
+  .setName('graph')
+  .setDescription('Check rebirth & prestige last stats graph')
+  .addUserOption(option =>
+    option.setName('target')
+      .setDescription('Select a user to view their graph (leave empty for yourself)')
+      .setRequired(false)
+  ),
   new SlashCommandBuilder()
     .setName('settimezone')
     .setDescription('Set your GMT time zone (range from GMT-12 to GMT+14)')
@@ -462,7 +467,7 @@ client.on('interactionCreate', async (interaction) => {
   if (interaction.commandName === 'graph') {
     await interaction.deferReply();
 
-    const targetUser = interaction.user;
+    const targetUser = interaction.options.getUser('target') || interaction.user;
 
     try {
       const userLatestRecord = await UserStat.findOne({ userId: targetUser.id }).sort({ lastUpdated: -1 });
@@ -482,8 +487,11 @@ client.on('interactionCreate', async (interaction) => {
       const userRecords = await UserStat.find({ userId: targetUser.id });
 
       if (userRecords.length === 0) {
+        const isSelf = targetUser.id === interaction.user.id;
         return interaction.editReply({
-          content: `There is no data recorded yet, do \`/play\` on Idle Miner first!`
+          content: isSelf
+            ? `There is no data recorded yet, do \`/play\` on Idle Miner first!`
+            : `There is no data recorded for **${targetUser.username}** yet!`
         });
       }
 
@@ -502,7 +510,6 @@ client.on('interactionCreate', async (interaction) => {
         const dayNum = String(d.getUTCDate()).padStart(2, '0');
 
         const dateStr = `${year}-${monthNum}-${dayNum}`;
-        const dayName = daysName[d.getUTCDay()];
 
         labels.push(`${monthNum}/${dayNum}`);
 
