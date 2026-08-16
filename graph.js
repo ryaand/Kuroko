@@ -91,7 +91,11 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
   const rawMax = maxRebirth > 0 ? maxRebirth : 10;
 
   const startVal = maxPrestige > 0 ? maxPrestige : 5;
-  const step = Math.max(5, Math.ceil(startVal * 1.3));
+
+  const targetLines = 25;
+  let step = Math.ceil((rawMax - startVal) / targetLines);
+  
+  if (step < 5) step = 5;
 
   let customMax = startVal;
   while (customMax < rawMax) {
