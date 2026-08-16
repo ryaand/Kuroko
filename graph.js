@@ -94,7 +94,6 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
 
   const targetLines = 25;
   let step = Math.ceil((rawMax - startVal) / targetLines);
-  
   if (step < 5) step = 5;
 
   let customMax = startVal;
@@ -157,26 +156,16 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: 1,
+            stepSize: step,
             autoSkip: false,
             font: { weight: 'bold', size: 12 },
             callback: function(value) {
               if (value === 0) return null;
-              if (value === startVal || (value > startVal && (value - startVal) % step === 0)) {
-                return value;
-              }
-              return null;
+              return value;
             }
           },
           grid: {
-            color: (ctx) => {
-              const val = ctx.tick.value;
-              if (val === 0) return 'transparent';
-              if (val === startVal || (val > startVal && (val - startVal) % step === 0)) {
-                return '#c6c9d1';
-              }
-              return 'transparent';
-            }
+            color: (ctx) => (ctx.tick.value === 0 ? 'transparent' : '#c6c9d1')
           }
         },
         y1: {
@@ -186,15 +175,12 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: 1,
+            stepSize: step,
             autoSkip: false,
             font: { weight: 'bold', size: 12 },
             callback: function(value) {
               if (value === 0) return null;
-              if (value === startVal || (value > startVal && (value - startVal) % step === 0)) {
-                return value;
-              }
-              return null;
+              return value;
             }
           },
           grid: { drawOnChartArea: false }
