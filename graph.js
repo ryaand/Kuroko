@@ -94,12 +94,17 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
 
   const targetLines = 25;
   let step = Math.ceil((rawMax - startVal) / targetLines);
+  
+  step = Math.ceil(step / 5) * 5;
   if (step < 5) step = 5;
 
-  let customMax = startVal;
-  while (customMax < rawMax) {
-    customMax += step;
+  const yTicks = [startVal];
+  let currentTick = startVal + step;
+  while (currentTick <= rawMax + step) {
+    yTicks.push(currentTick);
+    currentTick += step;
   }
+  const customMax = yTicks[yTicks.length - 1];
 
   const configuration = {
     type: 'bar',
@@ -156,16 +161,16 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: step,
+            stepSize: 1,
             autoSkip: false,
-            font: { weight: 'bold', size: 12 },
+            font: { weight: 'bold', size: 10 },
             callback: function(value) {
-              if (value === 0) return null;
-              return value;
+              if (yTicks.includes(value)) return value;
+              return null;
             }
           },
           grid: {
-            color: (ctx) => (ctx.tick.value === 0 ? 'transparent' : '#c6c9d1')
+            color: (ctx) => (yTicks.includes(ctx.tick.value) ? '#c6c9d1' : 'transparent')
           }
         },
         y1: {
@@ -175,12 +180,12 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
           ticks: {
             color: '#ffffff',
             precision: 0,
-            stepSize: step,
+            stepSize: 1,
             autoSkip: false,
-            font: { weight: 'bold', size: 12 },
+            font: { weight: 'bold', size: 10 },
             callback: function(value) {
-              if (value === 0) return null;
-              return value;
+              if (yTicks.includes(value)) return value;
+              return null;
             }
           },
           grid: { drawOnChartArea: false }
