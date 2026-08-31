@@ -365,6 +365,10 @@ client.on('interactionCreate', async (interaction) => {
         {
           name: 'Automatic Tracking',
           value: 'Simply play **Idle Miner** as usual (`/play`). The bot tracks your data automatically without manual commands!'
+        },
+        {
+          name: 'Buy me a coffee...',
+          value: 'https://buymeacoffee.com/ryaand'
         }
       )
       .setFooter({ text: 'Oh yea?!' })
