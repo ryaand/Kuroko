@@ -93,7 +93,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
 
   const targetLines = 25;
   let rawStep = (rawMax - startVal) / targetLines;
-
+  
   let step = Math.ceil(rawStep / 5) * 5;
   if (step < 5) step = 5;
 
@@ -163,7 +163,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             stepSize: 1,
             autoSkip: false,
             font: { weight: 'bold', size: 10 },
-            callback: function (value) {
+            callback: function(value) {
               if (yTicks.includes(value)) return value;
               return null;
             }
@@ -182,7 +182,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
             stepSize: 1,
             autoSkip: false,
             font: { weight: 'bold', size: 10 },
-            callback: function (value) {
+            callback: function(value) {
               if (yTicks.includes(value)) return value;
               return null;
             }
@@ -279,27 +279,10 @@ async function processIdleMinerEmbed(message) {
 
       await todayRecord.save();
     } catch (err) {
-      console.error("Error processing stats:", err);
+      console.error("Failed to save DB:", err);
     }
   }
 }
-
-client.on('ready', () => {
-  console.log(`Bot Discord sukses online sebagai ${client.user.tag}!`);
-});
-
-client.on('messageCreate', async (message) => {
-  await processIdleMinerEmbed(message);
-});
-
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log("Sukses tersambung ke database MongoDB!");
-    return client.login(BOT_TOKEN);
-  })
-  .catch(err => {
-    console.error("Gagal inisialisasi database/bot:", err);
-  });
 
 client.on('messageCreate', async (message) => {
   await processIdleMinerEmbed(message);
@@ -314,13 +297,13 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 
 const commands = [
   new SlashCommandBuilder()
-    .setName('graph')
-    .setDescription('Check rebirth & prestige last stats graph')
-    .addUserOption(option =>
-      option.setName('target')
-        .setDescription('Select a user to view their graph (leave empty for yourself)')
-        .setRequired(false)
-    ),
+  .setName('graph')
+  .setDescription('Check rebirth & prestige last stats graph')
+  .addUserOption(option =>
+    option.setName('target')
+      .setDescription('Select a user to view their graph (leave empty for yourself)')
+      .setRequired(false)
+  ),
   new SlashCommandBuilder()
     .setName('settimezone')
     .setDescription('Set your GMT time zone (range from GMT-12 to GMT+14)')
@@ -378,10 +361,6 @@ client.on('interactionCreate', async (interaction) => {
         {
           name: 'Automatic Tracking',
           value: 'Simply play **Idle Miner** as usual (`/play`). The bot tracks your data automatically without manual commands!'
-        },
-        {
-          name: 'Buy me a coffee...',
-          value: 'https://buymeacoffee.com/ryaand'
         }
       )
       .setFooter({ text: 'Oh yea?!' })
