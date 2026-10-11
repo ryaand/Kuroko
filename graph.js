@@ -32,12 +32,8 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-  res.send('Tracker Bot is Alive');
-});
-
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`Web server listening on port ${process.env.PORT || 3000}`);
+app.listen(PORT, () => {
+  console.log(`Web server listening on port ${PORT}`);
 });
 
 const client = new Client({
