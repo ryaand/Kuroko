@@ -21,7 +21,7 @@ const {
   bold
 } = require('discord.js');
 
-const { ChartJSNodeCanvas } = require('chartjs-node-canvas');
+const { createCanvas } = require('canvas');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const MONGO_URI = process.env.MONGO_URI;
@@ -50,7 +50,6 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// Database Schemas
 const UserStatSchema = new mongoose.Schema({
   userId: String,
   date: String,
@@ -71,133 +70,146 @@ const UserTimezoneSchema = new mongoose.Schema({
 const UserStat = mongoose.model('UserStat', UserStatSchema);
 const UserTimezone = mongoose.model('UserTimezone', UserTimezoneSchema);
 
-// Canvas
-const width = 800;
-const height = 600;
-const chartJSNodeCanvas = new ChartJSNodeCanvas({
-  width,
-  height,
-  backgroundColour: '#2b2d31'
-});
+async function generateLast14DaysGraph(labels, rebirthData, prestigeData) {
+  const width = 800;
+  const height = 600;
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
 
-async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
-  const adjustedRebirthData = rebirthData.map((rb, idx) => {
-    const pres = prestigeData[idx] || 0;
-    return rb >= pres ? rb - pres : rb;
-  });
-
-  const maxRebirth = Math.max(...rebirthData, 0);
-  const maxPrestige = Math.max(...prestigeData, 0);
-  const rawMax = maxRebirth > 0 ? maxRebirth : 10;
-
-  let startVal = 5;
-  if (maxPrestige > 0) {
-    startVal = Math.max(5, Math.floor(maxPrestige / 5) * 5);
-  }
-
-  const targetLines = 25;
-  let rawStep = (rawMax - startVal) / targetLines;
-
-  let step = Math.ceil(rawStep / 5) * 5;
-  if (step < 5) step = 5;
-
-  const yTicks = [startVal];
-  let currentTick = startVal + step;
-  while (yTicks.length < targetLines + 1) {
-    yTicks.push(currentTick);
-    currentTick += step;
-  }
-  const customMax = yTicks[yTicks.length - 1];
-
-  const configuration = {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: 'Prestige',
-          data: prestigeData,
-          backgroundColor: '#F1C40F',
-          borderRadius: 0,
-          stack: 'combined',
-          yAxisID: 'y'
-        },
-        {
-          label: 'Rebirth',
-          data: adjustedRebirthData,
-          backgroundColor: '#2ECC71',
-          borderRadius: 0,
-          stack: 'combined',
-          yAxisID: 'y'
-        },
-        {
-          label: 'HiddenTotal',
-          data: rebirthData,
-          backgroundColor: 'rgba(0,0,0,0)',
-          borderColor: 'rgba(0,0,0,0)',
-          stack: 'combined',
-          yAxisID: 'y1'
-        }
-      ]
-    },
-    options: {
-      responsive: false,
-      plugins: {
-        legend: {
-          labels: {
-            color: '#FFFFFF',
-            font: { size: 14, weight: 'bold' },
-            filter: (item) => item.text !== 'HiddenTotal'
-          }
-        }
-      },
-      scales: {
-        x: {
-          stacked: true,
-          ticks: { color: '#B5BAC1', font: { size: 12 } },
-        },
-        y: {
-          position: 'left',
-          stacked: true,
-          beginAtZero: true,
-          max: customMax,
-          ticks: {
-            color: '#ffffff',
-            precision: 0,
-            stepSize: 1,
-            autoSkip: false,
-            font: { weight: 'bold', size: 10 },
-            callback: function(value) {
-              if (yTicks.includes(value)) return value;
-              return null;
-            }
-          },
-          grid: {
-            color: (ctx) => (yTicks.includes(ctx.tick.value) ? '#c6c9d1' : 'transparent')
-          }
-        },
-        y1: {
-          position: 'right',
-          beginAtZero: true,
-          max: customMax,
-          ticks: {
-            color: '#ffffff',
-            precision: 0,
-            stepSize: 1,
-            autoSkip: false,
-            font: { weight: 'bold', size: 10 },
-            callback: function(value) {
-              if (yTicks.includes(value)) return value;
-              return null;
-            }
-          },
-          grid: { drawOnChartArea: false }
-        }
-      }
-    }
+  const colors = {
+    bg: '#2b2d31',
+    grid: '#ffffffda',
+    text: '#ffffff',
+    textX: '#B5BAC1',
+    prestige: '#F1C40F',
+    rebirth: '#2ECC71',
+    legend: '#FFFFFF'
   };
 
-  return await chartJSNodeCanvas.renderToBuffer(configuration);
+  ctx.fillStyle = colors.bg;
+  ctx.fillRect(0, 0, width, height);
+
+  const sliceLabels = labels.slice(-14);
+  const sliceRebirth = rebirthData.slice(-14);
+  const slicePrestige = prestigeData.slice(-14);
+
+  const adjustedRebirthData = sliceRebirth.map((rb, idx) => {
+    const pres = slicePrestige[idx] || 0;
+    return rb >= pres ? rb - pres : rb; 
+  });
+
+  const maxRebirth = Math.max(...adjustedRebirthData, 0);
+  const maxPrestige = Math.max(...slicePrestige, 0);
+  const totalMaxData = adjustedRebirthData.map((rb, i) => rb + (slicePrestige[i] || 0));
+  const absoluteMax = Math.max(...totalMaxData, 10);
+
+  let startVal = 0;
+  if (maxPrestige > 0) {
+    startVal = Math.floor(maxPrestige / 5) * 5;
+  }
+
+  const targetLines = 20;
+  let rawStep = (absoluteMax - startVal) / targetLines;
+  let step = 5;
+  if (rawStep > 5) step = Math.ceil(rawStep / 5) * 5;
+  if (rawStep > 50) step = Math.ceil(rawStep / 50) * 50;
+  if (rawStep > 500) step = Math.ceil(rawStep / 500) * 500;
+  if (rawStep > 5000) step = Math.ceil(rawStep / 1000) * 1000;
+
+  const customMax = Math.ceil(absoluteMax / step) * step;
+
+  const yTicks = [];
+  for (let tick = startVal; tick <= customMax; tick += step) {
+    yTicks.push(tick);
+  }
+
+  const paddingLeft = 40;
+  const paddingRight = 40;
+  const paddingTop = 70;
+  const paddingBottom = 70;
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
+
+  // horizontal line
+  ctx.font = '15px sans-serif';
+  ctx.lineWidth = 0.75;
+
+  yTicks.forEach((tickVal) => {
+    const yPos = paddingTop + chartHeight - ((tickVal - startVal) / (customMax - startVal || 1)) * chartHeight;
+
+    ctx.strokeStyle = colors.grid;
+    ctx.beginPath();
+    ctx.moveTo(paddingLeft, yPos);
+    ctx.lineTo(width - paddingRight, yPos);
+    ctx.stroke();
+
+    ctx.fillStyle = colors.text;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tickVal, paddingLeft - 8, yPos);
+    
+    ctx.textAlign = 'left';
+    ctx.fillText(tickVal, width - paddingRight + 8, yPos);
+  });
+
+
+  // vertical line
+  const totalBars = sliceLabels.length;
+  const slotWidth = chartWidth / totalBars; 
+  const barWidth = slotWidth * 0.75; 
+
+  const labelYPos = height - paddingBottom + 25;
+
+  sliceLabels.forEach((label, idx) => {
+    const xCenter = paddingLeft + (idx * slotWidth) + (slotWidth / 2);
+
+    ctx.save();
+    ctx.translate(xCenter, labelYPos);
+    ctx.rotate(-Math.PI / 4);
+    ctx.font = '15px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.textX;
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+
+    const rbVal = adjustedRebirthData[idx] || 0;
+    const prVal = slicePrestige[idx] || 0;
+    const stackRange = customMax - startVal || 1;
+
+    if (prVal > 0) {
+      const prHeight = (prVal / stackRange) * chartHeight;
+      const prY = paddingTop + chartHeight - ((prVal - startVal) / stackRange) * chartHeight; 
+      ctx.fillStyle = colors.prestige;
+      ctx.fillRect(xCenter - (barWidth / 2), prY, barWidth, prHeight);
+    }
+
+    if (rbVal > 0) {
+      const rbHeight = (rbVal / stackRange) * chartHeight;
+      const totalY = paddingTop + chartHeight - ((rbVal + prVal - startVal) / stackRange) * chartHeight; 
+      ctx.fillStyle = colors.rebirth;
+      ctx.fillRect(xCenter - (barWidth / 2), totalY, barWidth, rbHeight);
+    }
+  });
+
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  
+  const legendY = paddingTop - 35;
+  const legendStartX = width / 2 - 110;
+
+  ctx.fillStyle = colors.prestige;
+  ctx.fillRect(legendStartX, legendY - 7.5, 15, 15);
+  ctx.fillStyle = colors.legend;
+  ctx.fillText('Prestige', legendStartX + 25, legendY);
+
+  ctx.fillStyle = colors.rebirth;
+  ctx.fillRect(legendStartX + 110, legendY - 7.5, 15, 15);
+  ctx.fillStyle = colors.legend;
+  ctx.fillText('Rebirth', legendStartX + 135, legendY);
+
+  return canvas.toBuffer('image/png');
 }
 
 async function getUserLocalDateTime(userId) {
@@ -502,8 +514,6 @@ client.on('interactionCreate', async (interaction) => {
       const rebirthData = [];
       const prestigeData = [];
 
-      const daysName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
       for (let i = 13; i >= 0; i--) {
         const d = new Date(userNow.getTime() - i * 24 * 60 * 60 * 1000);
 
@@ -533,7 +543,7 @@ client.on('interactionCreate', async (interaction) => {
       const currentGmt = tzData ? tzData.gmtOffset : 0;
       const gmtSign = currentGmt >= 0 ? '+' : '';
 
-      const imageBuffer = await generateLast7DaysGraph(labels, rebirthData, prestigeData);
+      const imageBuffer = await generateLast14DaysGraph(labels, rebirthData, prestigeData);
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'graph.png' });
 
       const embed = new EmbedBuilder()
