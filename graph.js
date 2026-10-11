@@ -36,8 +36,8 @@ app.get('/', (req, res) => {
   res.send('Tracker Bot is Alive');
 });
 
-app.listen(PORT, () => {
-  console.log(`Web server listening on port ${PORT}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`Web server listening on port ${process.env.PORT || 3000}`);
 });
 
 const client = new Client({
