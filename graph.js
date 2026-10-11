@@ -32,6 +32,10 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.get('/', (req, res) => {
+  res.send('Tracker Bot is Alive');
+});
+
 app.listen(PORT, () => {
   console.log(`Web server listening on port ${PORT}`);
 });
@@ -93,7 +97,7 @@ async function generateLast7DaysGraph(labels, rebirthData, prestigeData) {
 
   const targetLines = 25;
   let rawStep = (rawMax - startVal) / targetLines;
-  
+
   let step = Math.ceil(rawStep / 5) * 5;
   if (step < 5) step = 5;
 
@@ -361,6 +365,10 @@ client.on('interactionCreate', async (interaction) => {
         {
           name: 'Automatic Tracking',
           value: 'Simply play **Idle Miner** as usual (`/play`). The bot tracks your data automatically without manual commands!'
+        },
+        {
+          name: 'Buy me a coffee...',
+          value: 'https://buymeacoffee.com/ryaand'
         }
       )
       .setFooter({ text: 'Oh yea?!' })
