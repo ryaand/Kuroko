@@ -165,8 +165,7 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData) {
 
     ctx.save();
     ctx.translate(xCenter, labelYPos);
-    ctx.rotate(-Math.PI / 4);
-    ctx.font = '15px sans-serif';
+    ctx.font = '10px sans-serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = colors.textX;
