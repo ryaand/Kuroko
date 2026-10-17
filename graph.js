@@ -158,15 +158,16 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData) {
   const slotWidth = chartWidth / totalBars; 
   const barWidth = slotWidth * 0.75; 
 
-  const labelYPos = height - paddingBottom + 25;
+  const baselineY = paddingTop + chartHeight;
+  const labelYPos = baselineY + 18;
 
   sliceLabels.forEach((label, idx) => {
     const xCenter = paddingLeft + (idx * slotWidth) + (slotWidth / 2);
 
     ctx.save();
     ctx.translate(xCenter, labelYPos);
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'right';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = colors.textX;
     ctx.fillText(label, 0, 0);
