@@ -69,7 +69,7 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData, userna
   const timezoneLegendGap = 28;
   const usernameTimezoneGap = 32;
   const usernameTopPadding = 18;
-  const dateCharacterSpacing = 1.5;
+  const dateCharacterSpacing = 1;
   const baselineY = paddingTop + chartHeight;
   const totalTickSteps = Math.max(yTicks.length - 1, 1);
   const firstTick = yTicks[0] || 0;
@@ -189,15 +189,32 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData, userna
   ctx.font = 'bold 18px sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  const legendStartX = width / 2 - 110;
+  const legendSwatchSize = 15;
+  const legendLabelGap = 10;
+  const legendItemGap = 24;
+  const prestigeLabelWidth = ctx.measureText('Prestige').width;
+  const rebirthLabelWidth = ctx.measureText('Rebirth').width;
+  const legendWidth = legendSwatchSize
+    + legendLabelGap
+    + prestigeLabelWidth
+    + legendItemGap
+    + legendSwatchSize
+    + legendLabelGap
+    + rebirthLabelWidth;
+  const legendStartX = (width - legendWidth) / 2;
+  const rebirthStartX = legendStartX
+    + legendSwatchSize
+    + legendLabelGap
+    + prestigeLabelWidth
+    + legendItemGap;
   ctx.fillStyle = colors.prestige;
-  ctx.fillRect(legendStartX, legendY - 7.5, 15, 15);
+  ctx.fillRect(legendStartX, legendY - legendSwatchSize / 2, legendSwatchSize, legendSwatchSize);
   ctx.fillStyle = colors.legend;
-  ctx.fillText('Prestige', legendStartX + 25, legendY);
+  ctx.fillText('Prestige', legendStartX + legendSwatchSize + legendLabelGap, legendY);
   ctx.fillStyle = colors.rebirth;
-  ctx.fillRect(legendStartX + 110, legendY - 7.5, 15, 15);
+  ctx.fillRect(rebirthStartX, legendY - legendSwatchSize / 2, legendSwatchSize, legendSwatchSize);
   ctx.fillStyle = colors.legend;
-  ctx.fillText('Rebirth', legendStartX + 135, legendY);
+  ctx.fillText('Rebirth', rebirthStartX + legendSwatchSize + legendLabelGap, legendY);
 
   return canvas.toBuffer('image/png');
 }

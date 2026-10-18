@@ -58,7 +58,7 @@ module.exports = {
         (record.gainedRebirths || 0) > (max.gainedRebirths || 0) ? record : max
       ), userRecords[0]);
       const [recordYear, recordMonth, recordDay] = highestRecord.date.split('-');
-      const formattedRecordDate = `${recordMonth}/${recordDay}/${recordYear}`;
+      const formattedRecordDate = `${recordDay}/${recordMonth}/${recordYear}`;
       const tzData = await UserTimezone.findOne({ userId: targetUser.id });
       const currentGmt = tzData ? tzData.gmtOffset : 0;
       const gmtSign = currentGmt >= 0 ? '+' : '';
