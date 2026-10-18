@@ -1,7 +1,7 @@
 {
-  "main": "graph.js",
+  "main": "main.js",
   "scripts": {
-    "start": "node graph.js"
+    "start": "node main.js"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.3",
