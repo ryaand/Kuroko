@@ -12,13 +12,13 @@ const {
   Routes,
   ActivityType
 } = require('discord.js');
-const { UserStat, UserTimezone } = require('./models');
+const { UserStat, UserTimezone, UserSettings } = require('./models');
 const { createIdleMinerTracker } = require('./services/idleMinerTracker');
 const commandModules = [
   require('./commands/graph'),
-  require('./commands/settimezone'),
   require('./commands/help'),
-  require('./commands/reset')
+  require('./commands/reset'),
+  require('./commands/setCommand')
 ];
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -80,13 +80,22 @@ client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
   const command = commandHandlers.get(interaction.commandName);
   if (!command) return;
-  await command.execute(interaction, {
-    UserStat,
-    UserTimezone,
-    client,
-    processIdleMinerEmbed,
-    getUserLocalDateTime
-  });
+  try {
+    await command.execute(interaction, {
+      UserStat,
+      UserTimezone,
+      UserSettings,
+      client,
+      processIdleMinerEmbed,
+      getUserLocalDateTime
+    });
+  } catch (error) {
+    if (error.code === 10062) {
+      console.warn(`Ignoring expired /${interaction.commandName} interaction.`);
+      return;
+    }
+    console.error(`Failed to execute /${interaction.commandName}.`, error);
+  }
 });
 
 const mongoose = require('mongoose');

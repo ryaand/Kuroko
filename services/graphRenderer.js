@@ -1,18 +1,19 @@
 const { createCanvas } = require('canvas');
 
-async function generateLast14DaysGraph(labels, rebirthData, prestigeData, username, timezone) {
+async function generateLast14DaysGraph(labels, rebirthData, prestigeData, username, timezone, settings = {}) {
   const width = 800;
   const height = 600;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
+  const isLightTheme = settings.theme === 'light';
   const colors = {
-    bg: '#2b2d31',
-    grid: '#ffffffda',
-    text: '#ffffff',
-    prestige: '#F1C40F',
-    rebirth: '#2ECC71',
-    legend: '#FFFFFF'
+    bg: isLightTheme ? '#FFFFFF' : '#2b2d31',
+    grid: isLightTheme ? '#81868F' : '#ffffffda',
+    text: isLightTheme ? '#060607' : '#ffffff',
+    prestige: settings.prestigeColor || '#F1C40F',
+    rebirth: settings.rebirthColor || '#2ECC71',
+    legend: isLightTheme ? '#060607' : '#FFFFFF'
   };
 
   ctx.fillStyle = colors.bg;
@@ -46,8 +47,19 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData, userna
   const yTicks = [];
   for (let tick = startVal; tick <= customMax; tick += step) yTicks.push(tick);
 
-  const paddingLeft = 40;
-  const paddingRight = 40;
+  ctx.font = '16px sans-serif';
+  const maxTickLabelWidth = Math.max(
+    ...yTicks.map(tick => ctx.measureText(String(tick)).width),
+    ctx.measureText('0').width
+  );
+  const axisLabelGap = 12;
+  const axisLabelBuffer = 12;
+  const sidePadding = Math.max(
+    40,
+    Math.ceil(maxTickLabelWidth + axisLabelGap + axisLabelBuffer)
+  );
+  const paddingLeft = sidePadding;
+  const paddingRight = sidePadding;
   const paddingTop = 70;
   const fixedChartHeight = 380;
   const paddingBottom = height - paddingTop - fixedChartHeight;
@@ -57,6 +69,7 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData, userna
   const timezoneLegendGap = 28;
   const usernameTimezoneGap = 32;
   const usernameTopPadding = 18;
+  const dateCharacterSpacing = 1.5;
   const baselineY = paddingTop + chartHeight;
   const totalTickSteps = Math.max(yTicks.length - 1, 1);
   const firstTick = yTicks[0] || 0;
@@ -100,7 +113,7 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData, userna
   ctx.fillText(username, width / 2, titleY);
   ctx.font = 'bold 18px sans-serif';
   ctx.fillText(timezone, width / 2, timezoneY);
-  ctx.font = '18px sans-serif';
+  ctx.font = '16px sans-serif';
   ctx.lineWidth = 0.75;
 
   yTicks.forEach((tickVal, tickIndex) => {
@@ -160,7 +173,16 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData, userna
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = colors.text;
-    ctx.fillText(label, 0, 0);
+    const characters = [...label];
+    const characterWidths = characters.map(character => ctx.measureText(character).width);
+    const labelWidth = characterWidths.reduce((total, characterWidth) => total + characterWidth, 0)
+      + dateCharacterSpacing * Math.max(characters.length - 1, 0);
+    let characterX = -labelWidth / 2;
+    characters.forEach((character, characterIndex) => {
+      ctx.textAlign = 'left';
+      ctx.fillText(character, characterX, 0);
+      characterX += characterWidths[characterIndex] + dateCharacterSpacing;
+    });
     ctx.restore();
   });
 

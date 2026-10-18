@@ -8,7 +8,7 @@ module.exports = {
     .addUserOption(option => option.setName('target')
       .setDescription('Select a user to view their graph (leave empty for yourself)')
       .setRequired(false)),
-  async execute(interaction, { UserStat, UserTimezone, client, processIdleMinerEmbed, getUserLocalDateTime }) {
+  async execute(interaction, { UserStat, UserTimezone, UserSettings, client, processIdleMinerEmbed, getUserLocalDateTime }) {
     await interaction.deferReply();
     const targetUser = interaction.options.getUser('target') || interaction.user;
     try {
@@ -57,19 +57,23 @@ module.exports = {
       const highestRecord = userRecords.reduce((max, record) => (
         (record.gainedRebirths || 0) > (max.gainedRebirths || 0) ? record : max
       ), userRecords[0]);
+      const [recordYear, recordMonth, recordDay] = highestRecord.date.split('-');
+      const formattedRecordDate = `${recordMonth}/${recordDay}/${recordYear}`;
       const tzData = await UserTimezone.findOne({ userId: targetUser.id });
       const currentGmt = tzData ? tzData.gmtOffset : 0;
       const gmtSign = currentGmt >= 0 ? '+' : '';
+      const settings = await UserSettings.findOne({ userId: targetUser.id });
       const imageBuffer = await generateLast14DaysGraph(
         labels,
         rebirthData,
         prestigeData,
         targetUser.username,
-        `GMT${gmtSign}${currentGmt}`
+        `GMT${gmtSign}${currentGmt}`,
+        settings || {}
       );
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'graph.png' });
       await interaction.editReply({
-        content: `**Highest daily record**\n- Rebirth: ${highestRecord.gainedRebirths || 0}\n- Prestige: ${highestRecord.gainedPrestiges || 0}\n- Date: ${highestRecord.date}`,
+        content: `**Highest daily record**\n- Rebirth: ${highestRecord.gainedRebirths || 0}\n- Prestige: ${highestRecord.gainedPrestiges || 0}\n- Date: ${formattedRecordDate}`,
         files: [attachment]
       });
     } catch (err) {

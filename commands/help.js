@@ -15,7 +15,9 @@ module.exports = {
       .setDescription('This bot automatically tracks your **Rebirth** & **Prestige** progress from Idle Miner!')
       .addFields(
         { name: '/graph', value: 'Displays a visual graph of your daily stats for the **Last 14 Days** alongside your highest single-day record.' },
-        { name: '/settimezone [gmt]', value: 'Sets your local time zone so daily resets match your local time (e.g., `/settimezone gmt: 7` for GMT+7).' },
+        { name: '/set theme value:<dark|light>', value: 'Choose the graph theme.' },
+        { name: '/set color chart', value: 'Set one chart color with `category:<rebirth|prestige>` and `value:<hex>`.' },
+        { name: '/set timezone gmt:<offset>', value: 'Set your local time zone so daily resets match your local time.' },
         { name: '/reset', value: 'Reset all your data permanently.' },
         { name: 'Automatic Tracking', value: 'Simply play **Idle Miner** as usual (`/play`). The bot tracks your data automatically without manual commands!' },
         { name: 'Buy me a coffee...', value: 'https://buymeacoffee.com/ryaand' }

@@ -78,20 +78,38 @@ The generated graph includes:
 | --- | --- |
 | `/graph` | Generate your 14-day Rebirth and Prestige graph. |
 | `/graph target:<user>` | View another user's graph, when their data is available. |
-| `/settimezone gmt:<offset>` | Set your timezone from GMT-12 to GMT+14. Quarter-hour offsets are supported. |
+| `/set theme value:<dark\|light>` | Choose the graph theme. |
+| `/set color chart category:<rebirth\|prestige> value:<hex>` | Set one custom chart color. |
+| `/set timezone gmt:<offset>` | Set your timezone from GMT-12 to GMT+14. Quarter-hour offsets are supported. |
 | `/help` | Display the command list and usage guide. |
 | `/reset` | Permanently delete your stored tracking data after confirmation. |
 
 ### Timezone examples
 
 ```text
-/settimezone gmt: 7
-/settimezone gmt: -5
-/settimezone gmt: 5.5
+/set timezone gmt: 7
+/set timezone gmt: -5
+/set timezone gmt: 5.5
 ```
 
 The accepted range is **GMT-12 through GMT+14**. Values are rounded to the nearest
 quarter hour.
+
+### Graph appearance settings
+
+Use `/set` to customize the graph for each user:
+
+```text
+/set theme value: dark
+/set color chart category: rebirth value: #2ECC71
+/set color chart category: prestige value: #F1C40F
+/set timezone gmt: 7
+```
+
+The theme command provides only `dark` and `light`. Chart colors are entered
+manually as six-digit hexadecimal values beginning with `#`. If Rebirth and
+Prestige are set to the same color, the bot displays a dismissible warning because
+the two chart sections may be difficult to distinguish.
 
 ## Getting started
 
@@ -182,6 +200,9 @@ The layout constants near the renderer's chart setup control the spacing between
 - Legend and chart.
 - The upper chart content and the canvas boundary.
 
+The left and right axis margins are calculated automatically from the widest tick
+label, so larger values such as thousands remain visible without being clipped.
+
 This keeps visual adjustments independent from command handling and database logic.
 
 ## Project structure
@@ -192,7 +213,10 @@ This keeps visual adjustments independent from command handling and database log
 │   ├── graph.js          # /graph command
 │   ├── help.js           # /help command
 │   ├── reset.js          # /reset command
-│   └── settimezone.js    # /settimezone command
+│   ├── setCommand.js     # /set command registration
+│   ├── setColorChart.js  # /set color chart
+│   ├── setTheme.js       # /set theme
+│   └── setTimezone.js    # /set timezone
 ├── services/
 │   ├── graphRenderer.js  # Canvas graph generation
 │   └── idleMinerTracker.js
@@ -202,6 +226,7 @@ This keeps visual adjustments independent from command handling and database log
 ├── main.js               # Application entry point and command loader
 ├── models.js             # Mongoose models
 ├── package.json
+├── LICENSE
 └── README.md
 ```
 

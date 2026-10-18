@@ -17,7 +17,15 @@ const UserTimezoneSchema = new mongoose.Schema({
   gmtOffset: { type: Number, default: 0 }
 });
 
+const UserSettingsSchema = new mongoose.Schema({
+  userId: { type: String, unique: true },
+  theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
+  rebirthColor: { type: String, default: '#2ECC71' },
+  prestigeColor: { type: String, default: '#F1C40F' }
+});
+
 module.exports = {
   UserStat: mongoose.model('UserStat', UserStatSchema),
-  UserTimezone: mongoose.model('UserTimezone', UserTimezoneSchema)
+  UserTimezone: mongoose.model('UserTimezone', UserTimezoneSchema),
+  UserSettings: mongoose.model('UserSettings', UserSettingsSchema)
 };
