@@ -70,7 +70,7 @@ const UserTimezoneSchema = new mongoose.Schema({
 const UserStat = mongoose.model('UserStat', UserStatSchema);
 const UserTimezone = mongoose.model('UserTimezone', UserTimezoneSchema);
 
-async function generateLast14DaysGraph(labels, rebirthData, prestigeData) {
+async function generateLast14DaysGraph(labels, rebirthData, prestigeData, username, timezone) {
   const width = 800;
   const height = 600;
   const canvas = createCanvas(width, height);
@@ -126,16 +126,69 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData) {
   const paddingLeft = 40;
   const paddingRight = 40;
   const paddingTop = 70;
-  const paddingBottom = 70;
+  const fixedChartHeight = 380;
+  const paddingBottom = height - paddingTop - fixedChartHeight;
   const chartWidth = width - paddingLeft - paddingRight;
-  const chartHeight = height - paddingTop - paddingBottom;
+  const chartHeight = fixedChartHeight;
+  // Adjust these values to control the vertical spacing of each element.
+  const legendChartGap = 40;
+  const timezoneLegendGap = 28;
+  const usernameTimezoneGap = 32;
+  const usernameTopPadding = 18;
+  const baselineY = paddingTop + chartHeight;
+  const totalTickSteps = Math.max(yTicks.length - 1, 1);
+  const firstTick = yTicks[0] || 0;
+  const zeroY = firstTick > 0
+    ? baselineY + chartHeight / totalTickSteps
+    : baselineY;
+
+  const getValueY = (value) => {
+    if (value <= firstTick) {
+      if (firstTick <= 0) return baselineY;
+      const lowerRangeRatio = Math.max(0, value / firstTick);
+      return zeroY - lowerRangeRatio * (zeroY - baselineY);
+    }
+    if (value >= yTicks[yTicks.length - 1]) return paddingTop;
+
+    for (let i = 0; i < yTicks.length - 1; i++) {
+      const lowerTick = yTicks[i];
+      const upperTick = yTicks[i + 1];
+
+      if (value >= lowerTick && value <= upperTick) {
+        const subRatio = (value - lowerTick) / (upperTick - lowerTick);
+        const tickPosition = (i + subRatio) / totalTickSteps;
+        return baselineY - tickPosition * chartHeight;
+      }
+    }
+
+    return paddingTop;
+  };
+
+  const labelYPos = zeroY + 18;
+  const legendY = paddingTop - legendChartGap;
+  const timezoneY = legendY - timezoneLegendGap;
+  const titleY = timezoneY - usernameTimezoneGap;
+  const contentTop = titleY - usernameTopPadding;
+  const contentBottom = labelYPos + 6;
+  const verticalOffset = (height - (contentBottom - contentTop)) / 2 - contentTop;
+  ctx.translate(0, verticalOffset);
+
+  ctx.fillStyle = colors.text;
+  ctx.font = 'bold 32px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(username, width / 2, titleY);
+
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText(timezone, width / 2, timezoneY);
 
   // horizontal line
-  ctx.font = '15px sans-serif';
+  ctx.font = '18px sans-serif';
   ctx.lineWidth = 0.75;
 
   yTicks.forEach((tickVal) => {
-    const yPos = paddingTop + chartHeight - ((tickVal - startVal) / (customMax - startVal || 1)) * chartHeight;
+    const tickIndex = yTicks.indexOf(tickVal);
+    const yPos = baselineY - (tickIndex / totalTickSteps) * chartHeight;
 
     ctx.strokeStyle = colors.grid;
     ctx.beginPath();
@@ -147,7 +200,7 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData) {
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     ctx.fillText(tickVal, paddingLeft - 8, yPos);
-    
+
     ctx.textAlign = 'left';
     ctx.fillText(tickVal, width - paddingRight + 8, yPos);
   });
@@ -158,45 +211,58 @@ async function generateLast14DaysGraph(labels, rebirthData, prestigeData) {
   const slotWidth = chartWidth / totalBars; 
   const barWidth = slotWidth * 0.75; 
 
-  const baselineY = paddingTop + chartHeight;
-  const labelYPos = baselineY + 18;
+  sliceLabels.forEach((label, idx) => {
+    const xCenter = paddingLeft + (idx * slotWidth) + (slotWidth / 2);
+
+    const rbVal = adjustedRebirthData[idx] || 0;
+    const prVal = slicePrestige[idx] || 0;
+
+    if (prVal > 0) {
+      const prY = getValueY(prVal);
+      const prHeight = zeroY - prY;
+      ctx.fillStyle = colors.prestige;
+      ctx.fillRect(xCenter - (barWidth / 2), prY, barWidth, prHeight);
+    }
+
+    if (rbVal > 0) {
+      const totalY = getValueY(rbVal + prVal);
+      const rebirthBaseY = getValueY(prVal);
+      const rbHeight = rebirthBaseY - totalY;
+      ctx.fillStyle = colors.rebirth;
+      ctx.fillRect(xCenter - (barWidth / 2), totalY, barWidth, rbHeight);
+    }
+  });
+
+  ctx.strokeStyle = colors.grid;
+  ctx.beginPath();
+  ctx.moveTo(paddingLeft, zeroY);
+  ctx.lineTo(width - paddingRight, zeroY);
+  ctx.stroke();
+
+  ctx.fillStyle = colors.text;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
+  ctx.fillText(0, paddingLeft - 8, zeroY);
+  ctx.textAlign = 'left';
+  ctx.fillText(0, width - paddingRight + 8, zeroY);
 
   sliceLabels.forEach((label, idx) => {
     const xCenter = paddingLeft + (idx * slotWidth) + (slotWidth / 2);
 
     ctx.save();
     ctx.translate(xCenter, labelYPos);
-    ctx.font = '12px sans-serif';
+    ctx.font = '14px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = colors.textX;
+    ctx.fillStyle = colors.text;
     ctx.fillText(label, 0, 0);
     ctx.restore();
-
-    const rbVal = adjustedRebirthData[idx] || 0;
-    const prVal = slicePrestige[idx] || 0;
-    const stackRange = customMax - startVal || 1;
-
-    if (prVal > 0) {
-      const prHeight = (prVal / stackRange) * chartHeight;
-      const prY = paddingTop + chartHeight - ((prVal - startVal) / stackRange) * chartHeight; 
-      ctx.fillStyle = colors.prestige;
-      ctx.fillRect(xCenter - (barWidth / 2), prY, barWidth, prHeight);
-    }
-
-    if (rbVal > 0) {
-      const rbHeight = (rbVal / stackRange) * chartHeight;
-      const totalY = paddingTop + chartHeight - ((rbVal + prVal - startVal) / stackRange) * chartHeight; 
-      ctx.fillStyle = colors.rebirth;
-      ctx.fillRect(xCenter - (barWidth / 2), totalY, barWidth, rbHeight);
-    }
   });
 
-  ctx.font = 'bold 14px sans-serif';
+  ctx.font = 'bold 18px sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   
-  const legendY = paddingTop - 35;
   const legendStartX = width / 2 - 110;
 
   ctx.fillStyle = colors.prestige;
@@ -543,19 +609,17 @@ client.on('interactionCreate', async (interaction) => {
       const currentGmt = tzData ? tzData.gmtOffset : 0;
       const gmtSign = currentGmt >= 0 ? '+' : '';
 
-      const imageBuffer = await generateLast14DaysGraph(labels, rebirthData, prestigeData);
+      const imageBuffer = await generateLast14DaysGraph(
+        labels,
+        rebirthData,
+        prestigeData,
+        targetUser.username,
+        `GMT${gmtSign}${currentGmt}`
+      );
       const attachment = new AttachmentBuilder(imageBuffer, { name: 'graph.png' });
 
-      const embed = new EmbedBuilder()
-        .setTitle(`${targetUser.username}`)
-        .setColor(0x5865F2)
-        .setDescription(`Timezone: **GMT${gmtSign}${currentGmt}**\n\nHighest daily record: **${highestRecord.gainedRebirths || 0}** Rebirths | **${highestRecord.gainedPrestiges || 0}** Prestiges *(${highestRecord.date})*`)
-        .setImage('attachment://graph.png')
-        .setFooter({ text: 'Rebirth Weekly Counter' })
-        .setTimestamp();
-
       await interaction.editReply({
-        embeds: [embed],
+        content: `**Highest daily record**\n- Rebirth: ${highestRecord.gainedRebirths || 0}\n- Prestige: ${highestRecord.gainedPrestiges || 0}\n- Date: ${highestRecord.date}`,
         files: [attachment]
       });
 
