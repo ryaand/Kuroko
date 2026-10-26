@@ -11,7 +11,7 @@ module.exports = {
   async execute(interaction) {
     const helpEmbed = new EmbedBuilder()
       .setColor(0x0099FF)
-      .setTitle('Rebirth Weekly Counter guide')
+      .setTitle('Guide')
       .setDescription('This bot automatically tracks your **Rebirth** & **Prestige** progress from Idle Miner!')
       .addFields(
         { name: '/graph', value: 'Displays a visual graph of your daily stats for the **Last 14 Days** alongside your highest single-day record.' },

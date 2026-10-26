@@ -1,6 +1,6 @@
 <div align="center">
 
-# Rebirth Weekly Counter
+# 黒子 - Kuroko
 
 **An unofficial Discord bot for tracking your daily progress in Idle Miner.**
 
@@ -25,7 +25,7 @@
 
 ## Overview
 
-Rebirth Weekly Counter is an unofficial Discord bot that automatically records your
+Kuroko is an unofficial Discord bot that automatically records your
 daily rebirth and prestige progress from Idle Miner. It stores daily gains in
 MongoDB and provides a visual graph for the most recent 14 days.
 
@@ -38,7 +38,7 @@ your progress.
 
 ## Preview
 
-![Rebirth Weekly Counter graph preview](assets/graph-preview.png)
+![Graph preview](assets/graph-preview.png)
 
 The generated graph includes:
 
@@ -125,7 +125,7 @@ Before running the bot, install or create:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/ryaand/Rebirth-Weekly-Counter.git
+git clone https://github.com/ryaand/Kuroko.git
 cd Rebirth-Weekly-Counter
 ```
 
@@ -156,7 +156,7 @@ Create a `.env` file in the project root:
 
 ```env
 BOT_TOKEN=your_discord_bot_token
-MONGO_URI=mongodb+srv://username:password@cluster.example.mongodb.net/rebirth-weekly-counter
+MONGO_URI=mongodb+srv://username:password@cluster.example.mongodb.net/kuroko
 PORT=3000
 ```
 
